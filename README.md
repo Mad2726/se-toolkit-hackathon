@@ -343,9 +343,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Last Updated**: April 2026  
 **Status**: Production Ready ✅
 
-### Example
-Input: Course B24, GPA 4.5
-Output: Grades: A A A A B B B C C C
-Course: B24
-GPA: 4.50
-Scholarship: 7600
