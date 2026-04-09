@@ -36,36 +36,34 @@ A Telegram bot that:
 - Rounds down to hundreds as per university policy
 - Adds bonuses: +10,000₽ for all A's, +6,000₽ for competition wins, +12,000₽ for state-funded winners
 - Returns instant, accurate scholarship calculations
-- Stores history for future reference
-- Exports results as PDF reports
+- Supports bilingual interface (Russian/English)
 
 ## Features
 
 ### Implemented ✅
 - ✅ Bilingual support (Russian/English)
-- ✅ Multiple course support (B23, B24, B25, M23, M24, M25)
+- ✅ Multiple course support (B23, B24, B25, M25)
 - ✅ GPA input as numbers (2.0-5.0) or letter grades (A, B, C, D)
 - ✅ Automatic GPA calculation from letter grades
-- ✅ Scholarship calculation with formula exponentiation
+- ✅ Scholarship calculation with official formula: `S = min + (max - min) * ((G - 2) / 3)^2.5`
 - ✅ Round-down to hundreds
-- ✅ Bonus system (all A's, competition wins, state funding)
+- ✅ Bonus system:
+  - +10,000₽ for all A's for two consecutive semesters
+  - +6,000₽ for competition wins
+  - +12,000₽ additional for state-funded competition winners
 - ✅ Conversation flow with YES/NO questions
 - ✅ START/STOP bot controls
-- ✅ Database storage for user history (SQLite)
-- ✅ Admin panel for modifying bonus amounts
-- ✅ Export calculations as PDF
-- ✅ Comparison with previous semester calculations
-- ✅ Multi-student batch calculation
+- ✅ New calculation option after result
 - ✅ Docker containerization
-- ✅ Health checks and monitoring
-- ✅ User activity tracking
+- ✅ Environment variable configuration (secure token handling)
 
 ### Not Yet Implemented 🔜
+- 🔜 Database storage for user history
+- 🔜 Admin panel for modifying bonus amounts
+- 🔜 Export calculations as PDF
+- 🔜 Comparison with previous semester calculations
+- 🔜 Multi-student batch calculation
 - 🔜 Web dashboard for analytics
-- 🔜 Push notifications for scholarship changes
-- 🔜 Integration with university information systems
-- 🔜 Advanced statistics and reporting
-- 🔜 Multi-tenant support for multiple universities
 
 ## Usage
 
@@ -78,7 +76,7 @@ A Telegram bot that:
 1. **Select Language**: Russian 🇷🇺 or English 🇬🇧
 2. **Select Course**:
    - B23, B24, B25 (Bachelor's programs)
-   - M23, M24, M25 (Master's program)
+   - M25 (Master's program)
 3. **Enter GPA**:
    - As numbers: `4.5`, `3,7`
    - As letter grades: `A B B C D`, `AABBC`
@@ -87,39 +85,27 @@ A Telegram bot that:
    - Competition win for higher scholarship?
    - State-funded student?
 5. **Get Result**: Display showing:
-   - Converted letter grades (10 subjects)
+   - Letter grades (sorted: A, B, C, D)
    - Course level
    - GPA value
    - Total scholarship amount
-
-### Additional Features
-- **PDF Export**: Send `/pdf` or press "📄 Экспорт в PDF" to get a PDF report
-- **History**: View your last 5 calculations with `/history`
-- **Compare**: Compare current semester with previous using `/compare`
-- **Batch Mode**: Calculate multiple students at once with `/batch`
-
-### Admin Commands
-- `/admin` - Access admin panel (requires admin user ID)
-- Modify bonus amounts
-- View overall statistics
-- Export all data
 
 ### Example
 Input: Course B24, GPA 4.5
 Output: 
 ```
-Grades: A A A A B B B C C C
-Course: B24
-GPA: 4.50
-Scholarship: 7600₽
+Оценки: A A A A B B B C C C
+Course:    B24
+Твой средний балл:    4,50
+Стипендия:    7600
 ```
 
 ## Deployment
 
 ### System Requirements
 - **OS**: Ubuntu 24.04 LTS (recommended) or any modern Linux distribution
-- **RAM**: Minimum 512 MB, recommended 1 GB
-- **Disk**: Minimum 5 GB free space
+- **RAM**: Minimum 256 MB, recommended 512 MB
+- **Disk**: Minimum 2 GB free space
 - **Docker**: Version 24.0+ 
 - **Docker Compose**: Version 2.20+
 
@@ -171,44 +157,23 @@ Edit `.env` file and configure:
 ```bash
 # Required: Get from @BotFather on Telegram
 BOT_TOKEN=your_actual_bot_token_here
-
-# Optional: Admin Telegram user IDs (get from @userinfobot)
-ADMIN_USER_IDS=123456789,987654321
-
-# Optional: Customize scholarship amounts
-MIN_SCHOLARSHIP=3000
-MAX_BACHELOR=10000
-MAX_MASTER=20000
-
-# Optional: Customize bonus amounts
-BONUS_ALL_A=10000
-BONUS_CONTEST=6000
-BONUS_CONTEST_BUDGET=12000
 ```
 
-#### 3. Create Required Directories
-```bash
-mkdir -p data reports logs
-```
-
-#### 4. Build and Start Services
+#### 3. Build and Start Services
 ```bash
 docker compose up -d --build
 ```
 
-#### 5. Verify Deployment
+#### 4. Verify Deployment
 ```bash
 # Check container status
 docker compose ps
 
 # View logs
 docker compose logs -f bot
-
-# Check health
-docker inspect --format='{{.State.Health.Status}}' scholarship-bot
 ```
 
-#### 6. Test the Bot
+#### 5. Test the Bot
 Open Telegram, find your bot by username, and send `/start`.
 
 ### Management Commands
@@ -239,21 +204,6 @@ docker compose up -d --build
 docker compose down
 ```
 
-#### Backup Database
-```bash
-# Create backup
-docker cp scholarship-bot:/app/data/student_data.db ./backup_$(date +%Y%m%d_%H%M%S).db
-
-# Or use the backup script
-./scripts/backup.sh
-```
-
-#### Restore Database
-```bash
-docker cp ./backup.db scholarship-bot:/app/data/student_data.db
-docker compose restart bot
-```
-
 ### Troubleshooting
 
 #### Bot doesn't respond
@@ -261,11 +211,6 @@ docker compose restart bot
 2. Check logs: `docker compose logs bot`
 3. Verify BOT_TOKEN is correct
 4. Ensure bot has no webhook set: restart container
-
-#### Database errors
-1. Check permissions: `chmod -R 755 data/`
-2. Verify database file exists
-3. Check disk space: `df -h`
 
 #### Out of memory
 1. Check resource usage: `docker stats`
@@ -277,21 +222,10 @@ docker compose restart bot
 ```
 se-toolkit-hackathon/
 ├── src/
-│   ├── main.py           # Bot entry point and handlers
-│   ├── calculator.py     # Scholarship calculation logic
-│   ├── config.py         # Configuration and texts
-│   ├── database.py       # SQLite database operations
-│   └── pdf_export.py     # PDF report generation
-├── scripts/
-│   ├── backup.sh         # Database backup script
-│   ├── restore.sh        # Database restore script
-│   └── monitor.sh        # Health monitoring script
-├── data/                 # SQLite database storage
-├── reports/              # Generated PDF reports
-├── logs/                 # Application logs
+│   └── main.py           # Bot entry point and all logic
 ├── screenshots/          # Demo screenshots
 ├── Dockerfile            # Container build configuration
-├── docker-compose.yml    # Multi-service orchestration
+├── docker-compose.yml    # Service orchestration
 ├── .env.docker.example   # Environment variables template
 ├── .gitignore            # Git ignore rules
 ├── requirements.txt      # Python dependencies
@@ -302,18 +236,15 @@ se-toolkit-hackathon/
 ### Technology Stack
 
 - **Backend**: Python 3.11, pyTelegramBotAPI
-- **Database**: SQLite3
-- **PDF Generation**: ReportLab
 - **Containerization**: Docker, Docker Compose
-- **CI/CD**: GitHub Actions (planned)
+- **Configuration**: Environment variables with python-dotenv
 
 ### Security Considerations
 
 - `.env` file is excluded from git via `.gitignore`
-- Database files are not tracked by git
+- BOT_TOKEN is loaded from environment variables (never hardcoded)
+- Container runs with minimal privileges (non-root user)
 - BOT_TOKEN should be rotated if compromised
-- Admin user IDs restrict access to admin panel
-- Container runs with minimal privileges
 
 ### Contributing
 
@@ -342,4 +273,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Version**: 2.0.0  
 **Last Updated**: April 2026  
 **Status**: Production Ready ✅
-
